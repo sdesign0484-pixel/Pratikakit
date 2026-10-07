@@ -1,102 +1,69 @@
-# Plateforme d'outils numériques — étape 2 : administration
+# Plateforme d'outils numériques — étape 3 : comptes clients, commande, ouverture des outils
 
 Site en HTML/CSS/JavaScript (sans framework ni étape de build) + base Supabase.
-Étape 1 : structure, design sombre, catalogue, contact. **Étape 2 (cette version) : administration complète.**
+Étape 1 : catalogue et contact. Étape 2 : administration. **Étape 3 (cette version) : inscription et connexion des clients, panier, commande par référence `CMD-…`, espace « Mes applications », ouverture des outils.**
 
 ```
 plateforme-outils/
-├── netlify.toml                  Netlify : publie le dossier site/
-├── vercel.json                   Vercel : publie le dossier site/ + en-têtes de sécurité
-├── site/                         ← le site à déployer
-│   ├── index.html, catalogue.html, outil.html, contact.html, 404.html
-│   ├── admin/index.html          ← L'ADMINISTRATION (adresse : votre-site/admin/)
-│   ├── _headers                  Netlify : sécurité (CSP) ; l'admin est « noindex » et sans cache
-│   ├── css/style.css, css/admin.css
-│   └── js/
-│       ├── config.js             ← LE fichier à renseigner (URL + clé publique Supabase)
-│       ├── api.js, ui.js, demo-data.js, pages/ (site public)
-│       ├── admin/                connexion + 2FA, tableau de bord, 7 sections
-│       └── vendor/supabase.js    supabase-js 2.117.2 hébergé avec le site
-└── supabase/
-    ├── schema.sql                installation NEUVE (v0.2)
-    ├── patch-v0.2.sql            migration si schema.sql v0.1 est déjà installé
-    └── tests/                    tests de sécurité de la base
+├── netlify.toml, vercel.json     hébergement du site principal (dossier site/)
+├── site/                         ← site principal
+│   ├── index, catalogue, outil, contact, 404 .html
+│   ├── connexion, inscription, mot-de-passe-oublie, reinitialiser .html
+│   ├── panier, commande, mon-espace .html
+│   ├── admin/index.html          administration
+│   ├── css/  js/ (config.js ← à renseigner ; pages/, admin/, vendor/)
+│   └── _headers                  sécurité (Netlify)
+├── tools-site/                   ← SECOND site : le « lanceur d'outils » (sous-domaine séparé)
+└── supabase/                     schema.sql (neuf), patch-v0.2.sql (migration), tests/
 ```
 
-## 1. Mettre la base à jour
+## 1. Mise en service (dans cet ordre)
 
-- **Projet déjà installé avec la v0.1** : SQL Editor → coller `supabase/patch-v0.2.sql` → Run. Sans danger si relancé. Il ajoute l'e-mail dans les profils, la taille des fichiers HTML et les réglages d'accueil.
-- **Nouveau projet** : coller `supabase/schema.sql` à la place.
+**a. Base** — rien de nouveau : `schema.sql` / `patch-v0.2.sql` de l'étape 2 suffisent (aucune table ajoutée).
 
-## 2. Créer le compte administrateur (une seule fois)
+**b. Réglages Supabase → Authentication** (à faire une fois) :
+- *Sign In / Providers* : **« Allow new users to sign up » doit être activé** (les clients s'inscrivent ; si vous l'aviez désactivé à l'étape 2, réactivez-le). Longueur minimale du mot de passe : **8**.
+- *URL Configuration* : « Site URL » = adresse de production ; « Redirect URLs » = ajouter les adresses de test (Vercel) **et** de production (Netlify), par ex. `https://mon-test.vercel.app/**` et `https://www.mondomaine.mg/**`. Sans cela, les liens de confirmation et de réinitialisation échouent.
+- *E-mails* : garder « Confirm email » activé. **Le service d'envoi intégré de Supabase est très limité** (quelques e-mails par heure) : avant le lancement, brancher un vrai service d'envoi (SMTP personnalisé : Resend, Brevo, etc.). Traduire en français les modèles « Confirm signup » et « Reset password ».
 
-1. Supabase → **Authentication → Users → Add user** : e-mail + mot de passe solide, cocher « Auto Confirm User ».
-2. SQL Editor, en remplaçant l'e-mail :
-   ```sql
-   update profiles set role = 'admin'
-   where id = (select id from auth.users where email = 'ton-email@exemple.com');
-   ```
-3. Ouvrir `votre-site/admin/`, se connecter. **Au premier passage, l'écran de double authentification s'affiche** : scanner le QR code avec Google Authenticator, Microsoft Authenticator ou Aegis, puis saisir le code à 6 chiffres.
-4. Recommandé tant que l'inscription des clients n'existe pas : Supabase → Authentication → Sign In / Providers → désactiver « Allow new users to sign up ».
-5. À vérifier : l'authentification multifacteur (TOTP) doit être activée dans les réglages d'authentification du projet (c'est normalement le cas par défaut).
+**c. Site principal** — dans `site/js/config.js` : `FEATURES: { auth: true }` (mettre `false` pour fermer la boutique : les achats redeviennent inactifs) et `TOOLS_ORIGIN` (étape d). Redéployer.
 
-Sans double authentification validée, **aucune action d'administration ne fonctionne**, même en appelant l'API directement : c'est la base qui l'exige, pas seulement l'écran.
+**d. Lanceur d'outils** — déployer le dossier `tools-site/` comme **site séparé** sur un sous-domaine (ex. `outils.mondomaine.mg`) ; en test, un second projet Vercel dont le « Root Directory » est `tools-site`. Dans `tools-site/config.js`, mettre l'adresse du site principal dans `PLATFORM_ORIGINS` (ex. `['https://mon-test.vercel.app']`) et redéployer. Puis reporter l'adresse du lanceur dans `TOOLS_ORIGIN` du site principal (sans « / » final). Ne pas ajouter de CSP au lanceur et ne pas activer `Cross-Origin-Opener-Policy` sur le site principal (voir `tools-site/README.md`).
 
-## 3. Ce que fait l'administration
+**e. Essai complet** (recommandé avant d'ouvrir au public) : créer un compte client → ajouter un outil au panier → commander → payer (ou simuler) → dans l'admin, « Commandes » → *Confirmer le paiement* → le client voit l'outil dans « Mon espace » → *Utiliser l'outil*.
 
-| Section | Fonctions |
+## 2. Parcours client
+
+| Étape | Ce qui se passe |
 |---|---|
-| Tableau de bord | Commandes à vérifier, nouveaux messages, outils, comptes ; sauvegarde JSON (avec ou sans le contenu HTML des outils) |
-| Outils | Créer/modifier : nom, adresse, catégorie, textes, listes, image, prix, durée d'accès, statut, ordre ; téléverser le **fichier HTML** (5 Mo max) ou indiquer un **lien externe https** ; filigrane optionnel. Pas de suppression : passer l'outil en « Indisponible » ou « Brouillon » |
-| Catégories | Créer, modifier, masquer, supprimer |
-| Commandes | Filtrer, rechercher ; **Confirmer le paiement** (moyen + référence de transaction, une même référence ne sert qu'une fois) ; Annuler |
-| Clients | Liste avec recherche ; fiche : accès, commandes ; donner un accès (avec date d'expiration), retirer un accès, suspendre/réactiver un compte |
-| Messages | Lire, marquer lu, archiver, répondre par e-mail |
-| Réglages du site | Nom, titre et texte d'accueil, texte du pied de page, sections affichées, WhatsApp, e-mail, instructions de paiement. Un champ vide rétablit le texte par défaut |
-| Journal | Les 200 dernières actions sensibles (non modifiable depuis le site) |
+| Inscription | Nom, téléphone (utile pour retrouver le paiement Mobile Money), e-mail, mot de passe. Un e-mail de confirmation est envoyé. Une adresse déjà inscrite n'est pas révélée |
+| Connexion / mot de passe oublié | Retour automatique vers la page demandée (uniquement des pages du site). Renvoi de l'e-mail de confirmation possible |
+| Panier | Gardé dans le navigateur (identifiants seulement). Les **prix sont relus dans la base** et le total est recalculé par le serveur à la commande |
+| Commande | Référence `CMD-XXXXXXXX`, état « en attente de paiement », instructions de paiement saisies dans l'admin, lien WhatsApp pré-rempli. **Aucun accès n'est donné avant que vous confirmiez le paiement** |
+| Mon espace | Applications (origine, date, durée, état : actif / expiré / retiré / pas encore actif), commandes, profil (nom, téléphone, mot de passe) |
+| Outil gratuit | « Obtenir gratuitement » depuis la fiche, après connexion |
+| Ouvrir un outil | Lien externe : nouvel onglet détaché. Fichier HTML : fenêtre du lanceur, sur une origine séparée |
 
-Les listes sont limitées : 1 000 clients, 300 commandes, 300 messages, 200 lignes de journal par affichage (la sauvegarde, elle, récupère tout).
+**Limites à connaître** : les fenêtres pop-up doivent être autorisées ; un fichier HTML livré dans un navigateur peut être copié (le filigrane nom + téléphone dissuade, il n'empêche pas) ; les outils 100 % locaux gardent leurs données dans le navigateur du client.
 
-## 4. Brancher et héberger (Vercel pour tester, Netlify pour la production)
+## 3. Hébergement
 
-Dans tous les cas : `site/js/config.js` (URL + clé publique `anon`/`publishable`, jamais la clé `service_role`). Aucun autre réglage ne change d'un hébergeur à l'autre, et Supabase accepte les requêtes depuis n'importe quelle adresse.
+Voir la section « hébergement » de l'étape précédente : Vercel pour tester (usage non commercial uniquement), Netlify pour la production. Le lanceur (`tools-site/`) a ses propres `vercel.json` et `netlify.toml`. `vercel.json` et `site/_headers` doivent rester identiques (même protections).
 
-| | Vercel (tests) | Netlify (production) |
-|---|---|---|
-| Fichier de configuration lu | `vercel.json` (à la racine) | `netlify.toml` + `site/_headers` |
-| Réglages dans le tableau de bord | Framework : « Other » ; pas de commande de build ; dossier de sortie `site` (déjà indiqué dans `vercel.json`) ; ne pas changer le « Root Directory » | Dossier à publier : `site` (déjà indiqué dans `netlify.toml`) |
-| Mise en ligne | Import d'un dépôt Git ou ligne de commande `vercel` | Glisser-déposer ou dépôt Git |
-| Usage commercial | **Interdit sur l'offre gratuite « Hobby »** : tests privés seulement | Autorisé sur l'offre gratuite, mais limité par un système de crédits (voir ci-dessous) |
-
-Chaque hébergeur ignore le fichier de l'autre : les deux configurations peuvent rester dans le projet. `vercel.json` et `site/_headers` contiennent exactement les mêmes protections (CSP, anti-iframe, `noindex` et pas de cache pour `/admin/`) ; si vous modifiez l'un, **modifiez l'autre**.
-
-**Vérifier après la première mise en ligne** (sur chaque hébergeur) : ouvrir le site, touche F12 → onglet Console : aucune erreur « Refused to… » ; ou dans un terminal `curl -I https://votre-adresse/` : la ligne `content-security-policy` doit apparaître. Si elle manque, la configuration n'est pas lue.
-
-**Chaque adresse est un site distinct** : la session administrateur d'un hébergeur n'est pas reconnue sur l'autre (reconnexion et code de double authentification à refaire ; le compte et l'application d'authentification restent les mêmes).
-
-**À prévoir à l'étape connexion des clients** : dans Supabase → Authentication → URL Configuration, ajouter les adresses de test (Vercel) et de production (Netlify) dans les adresses de redirection autorisées, sinon les liens de réinitialisation de mot de passe échoueront.
-
-Si Supabase est derrière un domaine personnalisé, l'ajouter dans `connect-src` de `site/_headers` **et** de `vercel.json`.
-
-## 5. Ce qui est fonctionnel, provisoire, restant
+## 4. Ce qui est fonctionnel, provisoire, restant
 
 | Élément | État |
 |---|---|
-| Site public (accueil, catalogue, fiche, contact) modifiable depuis l'admin | Fonctionnel |
-| Administration : toutes les sections ci-dessus | Fonctionnel (tests ci-dessous) |
-| Confirmation de paiement manuelle (Mobile Money) et création des accès | Fonctionnel côté administrateur |
-| **Création de compte et commande côté client** | **Pas encore fait** : tant que les clients ne peuvent pas s'inscrire ni commander, les sections « Commandes » et « Clients » restent presque vides. Vous pouvez déjà donner un accès à un compte créé dans Supabase |
-| Boutons « Acheter » / « Obtenir » des fiches | Désactivés (`FEATURES.auth` = false) jusqu'à l'étape suivante |
-| Aperçu d'un outil HTML dans l'admin | Volontairement absent : il se fera sur le sous-domaine des outils (étape de distribution), pour que le code d'un outil ne s'exécute jamais avec la session administrateur |
-| Notification par e-mail des messages et commandes | Non incluse : tout se lit dans l'admin |
-| Pages légales, distribution des outils aux clients, espace client | Étapes suivantes |
+| Inscription, connexion, réinitialisation, panier, commande, espace client, obtention gratuite, ouverture des outils | Fonctionnel (tests ci-dessous) |
+| Confirmation de paiement par l'administrateur (Mobile Money manuel) | Fonctionnel |
+| Paiement en ligne automatique | Non prévu (validation manuelle) |
+| **Pages légales** (CGV, confidentialité, mentions) et acceptation à l'inscription | **À faire avant le lancement** |
+| Notification par e-mail à l'administrateur (nouvelle commande / message) | Non incluse : tout se lit dans l'admin |
+| Aperçu d'un outil HTML dans l'admin | Non (par sécurité) ; l'essai se fait avec un compte client |
 
-## 6. Tests réalisés
+## 5. Tests réalisés (Chrome headless, politique de sécurité réelle, vraie API PostgREST, vrai `schema.sql`)
 
-Dans Chrome headless, avec la politique de sécurité réelle (`_headers`) :
+- **Parcours clients : 109 contrôles sur 109** — inscription (validations, confirmation d'e-mail, adresse déjà utilisée, création du profil par la base), connexion et redirections (adresses externes refusées), mot de passe oublié et réinitialisation (lien valide, expiré, mal formé), panier (persistant, trafiqué, nettoyé), commande (prix serveur, limite de 5 commandes en attente, isolation entre clients), paiement confirmé → accès, états expiré / retiré / pas encore actif / outil indisponible, profil et changement de mot de passe, déconnexion, ouverture d'un outil HTML (origine séparée, aucune session visible, filigrane, liaison coupée), lien externe, fenêtre bloquée, accès retiré après affichage, **attaque simulée contre le lanceur depuis un autre site (ignorée)**, boutique fermée, mobile 390 px.
+- **Administration : 111/111**, **site public : 70/70**, **base : 90/90** (non-régression).
 
-- **Administration : 111 contrôles sur 111** contre la **vraie API PostgREST** et le vrai `schema.sql` (Postgres local) : connexion, refus des comptes non admin, activation et reprise de la double authentification, création/modification d'outils avec téléversement, validations, catégories, réglages visibles sur le site public, confirmation/annulation de paiements, doublon de référence refusé, accès accordés/retirés, suspension, messages, journal, sauvegarde, texte piégé non exécuté, accès API directs refusés (admin sans 2FA, client), mobile 390 px sans défilement horizontal.
-- **Site public : 70 contrôles sur 70** (non-régression).
-- **Base : 90 contrôles de sécurité sur 90**, installation neuve et migration v0.1 → v0.2 relancée deux fois.
-
-**Non testé** : un déploiement réel sur Vercel ou Netlify (la configuration Vercel suit la documentation officielle et est identique à celle de Netlify, mais n'a pas été essayée en ligne) ; un vrai projet Supabase. Le service d'authentification (GoTrue) était **simulé** : la vraie validation des codes TOTP, l'envoi d'e-mails et les règles d'authentification de votre projet n'ont pas été éprouvés. Safari, Firefox, lecteurs d'écran et réseau mobile lent non plus.
+**Non testé** : un vrai projet Supabase. Le service d'authentification (GoTrue) était **simulé** : l'envoi réel des e-mails, la validation des codes de double authentification et vos réglages d'authentification n'ont pas été éprouvés. Safari et Firefox (notamment le blocage des pop-up), lecteurs d'écran, réseau mobile lent et déploiement réel sur Vercel / Netlify non plus.

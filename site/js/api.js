@@ -90,6 +90,12 @@ export async function fetchCatalogue() {
   return { categories: categories || [], tools: tools || [] };
 }
 
+export async function fetchToolsByIds(ids) {
+  if (!ids.length) return [];
+  if (isDemo()) { const d = await demoData(); return d.tools.filter((t) => ids.includes(t.id)); }
+  return (await run(client().from('tools').select(TOOL_COLUMNS).in('id', ids))) || [];
+}
+
 // Retourne { tool, category, related } ; tool = null si le slug n'existe pas (ou est un brouillon).
 export async function fetchTool(slug) {
   if (isDemo()) {

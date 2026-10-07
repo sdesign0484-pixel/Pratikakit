@@ -15,6 +15,8 @@ settingsP.then((s) => {
 });
 
 const form = $('#contact-form'), status = $('#form-status'), submit = $('#submit-btn');
+const presetSubject = new URLSearchParams(location.search).get('sujet');
+if (presetSubject) $('#f-subject').value = presetSubject.slice(0, 200);
 const fields = {
   name: $('#f-name'), email: $('#f-email'), subject: $('#f-subject'), message: $('#f-message'),
 };

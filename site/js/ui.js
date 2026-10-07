@@ -2,6 +2,8 @@
 // RÈGLE : aucun texte venant de la base n'est inséré avec innerHTML (toujours textContent).
 import { CONFIG } from './config.js';
 import { fetchSettings, isDemo, isConfigured, DEFAULT_SETTINGS } from './api.js';
+import { currentUser } from './auth.js';
+import { cart } from './cart.js';
 
 export function h(tag, attrs, ...children) {
   const el = document.createElement(tag);
@@ -66,6 +68,21 @@ export function toolVisual(tool, { onFail } = {}) {
   return onFail ? null : placeholder();  // onFail fourni = pas de repli décoratif (fiche détaillée)
 }
 
+export const formatDate = (iso) => (iso ? new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
+export const ORDER_STATUS = {
+  awaiting_payment: { label: 'En attente de paiement', cls: 'badge-soon' },
+  paid: { label: 'Payée', cls: 'badge-ok' },
+  cancelled: { label: 'Annulée', cls: 'badge-off' },
+};
+export const ACCESS_STATE = {
+  active: { label: 'Actif', cls: 'badge-ok' },
+  expired: { label: 'Expiré', cls: 'badge-off' },
+  revoked: { label: 'Retiré', cls: 'badge-off' },
+  not_started: { label: 'Pas encore actif', cls: 'badge-soon' },
+};
+export const SOURCE_LABEL = { purchase: 'Achat', free: 'Gratuit', manual: 'Offert' };
+export const badgeOf = (map, key) => { const m = map[key] || { label: key, cls: '' }; return h('span', { class: `badge ${m.cls}` }, m.label); };
+
 export const toolUrl = (tool) => `outil.html?slug=${encodeURIComponent(tool.slug)}`;
 
 export function toolCard(tool, categoryName) {
@@ -120,9 +137,21 @@ const brandMark = (name) => initialsOf(name);
 export const whatsappUrl = (n) => { const d = String(n || '').replace(/\D/g, ''); return d.length >= 8 ? `https://wa.me/${d}` : null; };
 export const mailUrl = (e) => (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e || '') ? `mailto:${e}` : null);
 
-function renderHeader(el, active, settings) {
-  const nav = h('nav', { id: 'site-nav', class: 'site-nav', 'aria-label': 'Navigation principale' },
-    NAV.map((n) => h('a', { href: n.href, 'aria-current': n.key === active ? 'page' : null }, n.label)));
+const shopEnabled = () => Boolean(CONFIG.FEATURES.auth) && isConfigured() && !isDemo();
+
+function renderHeader(el, active, settings, user) {
+  const links = NAV.map((n) => h('a', { href: n.href, 'aria-current': n.key === active ? 'page' : null }, n.label));
+  if (shopEnabled()) {
+    const count = h('span', { class: 'cart-count', hidden: true });
+    const syncCount = () => { const n = cart.count(); count.textContent = String(n); count.hidden = n === 0; count.setAttribute('aria-label', `${n} outil${n > 1 ? 's' : ''} dans le panier`); };
+    syncCount();
+    window.addEventListener('pf-cart', syncCount); window.addEventListener('storage', syncCount);
+    links.push(
+      h('a', { class: 'nav-cta', href: 'panier.html', 'aria-current': active === 'cart' ? 'page' : null }, 'Panier', count),
+      user ? h('a', { class: 'nav-cta', href: 'mon-espace.html', 'aria-current': active === 'account' ? 'page' : null }, 'Mon espace')
+           : h('a', { class: 'nav-cta', href: 'connexion.html', 'aria-current': active === 'login' ? 'page' : null }, 'Connexion'));
+  }
+  const nav = h('nav', { id: 'site-nav', class: 'site-nav', 'aria-label': 'Navigation principale' }, links);
   const toggle = h('button', { class: 'nav-toggle', type: 'button', 'aria-expanded': 'false', 'aria-controls': 'site-nav', 'aria-label': 'Ouvrir le menu' },
     h('span', { class: 'nav-toggle-bars', 'aria-hidden': 'true' }));
   const setOpen = (open) => {
@@ -165,13 +194,13 @@ function renderFooter(el, settings) {
 // Retourne une promesse des réglages (utile pour le titre de la page).
 export function loadChrome(active) {
   const header = $('#site-header'), footer = $('#site-footer');
-  return fetchSettings().then((settings) => {
-    if (header) renderHeader(header, active, settings);
+  return Promise.all([fetchSettings(), currentUser()]).then(([settings, user]) => {
+    if (header) renderHeader(header, active, settings, user);
     if (footer) renderFooter(footer, settings);
     return settings;
   }).catch(() => {
     const s = { ...DEFAULT_SETTINGS };
-    if (header) renderHeader(header, active, s);
+    if (header) renderHeader(header, active, s, null);
     if (footer) renderFooter(footer, s);
     return s;
   });

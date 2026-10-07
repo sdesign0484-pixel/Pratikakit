@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0a0d13">
+<meta name="description" content="Écrivez-nous : question, renseignement ou besoin d'un outil sur mesure.">
+<title>Contact</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<script defer src="js/vendor/supabase.js"></script>
+<script type="module" src="js/pages/contact.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Aller au contenu</a>
+<div id="site-header"></div>
+<main id="main">
+  <noscript><div class="container"><p class="alert alert-info">Ce site a besoin de JavaScript pour afficher le catalogue.</p></div></noscript>
+  <div class="container">
+    <div class="page-head">
+      <h1>Contact</h1>
+      <p>Une question, un besoin particulier ? Écrivez-nous, nous répondons dès que possible.</p>
+    </div>
+    <div class="contact-layout">
+      <div>
+        <div id="form-status" aria-live="polite"></div>
+        <form class="form" id="contact-form" novalidate>
+          <div class="field">
+            <label for="f-name">Nom</label>
+            <input class="input" id="f-name" name="name" type="text" autocomplete="name" maxlength="120" aria-describedby="err-name" required>
+            <p class="field-error" id="err-name"></p>
+          </div>
+          <div class="field">
+            <label for="f-email">Adresse e-mail</label>
+            <input class="input" id="f-email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" aria-describedby="err-email" required>
+            <p class="field-error" id="err-email"></p>
+          </div>
+          <div class="field">
+            <label for="f-subject">Objet</label>
+            <input class="input" id="f-subject" name="subject" type="text" maxlength="200" aria-describedby="err-subject" required>
+            <p class="field-error" id="err-subject"></p>
+          </div>
+          <div class="field">
+            <label for="f-message">Message</label>
+            <textarea class="textarea" id="f-message" name="message" maxlength="5000" aria-describedby="hint-message err-message" required></textarea>
+            <p class="hint" id="hint-message">10 caractères minimum.</p>
+            <p class="field-error" id="err-message"></p>
+          </div>
+          <div class="hp" aria-hidden="true">
+            <label for="f-website">Ne pas remplir ce champ</label>
+            <input id="f-website" name="website" type="text" tabindex="-1" autocomplete="off">
+          </div>
+          <div><button class="btn btn-primary" id="submit-btn" type="submit">Envoyer le message</button></div>
+        </form>
+      </div>
+      <aside class="side-box" id="other-contact" aria-label="Autres moyens de contact"></aside>
+    </div>
+  </div>
+</main>
+<div id="site-footer"></div>
+</body>
+</html>

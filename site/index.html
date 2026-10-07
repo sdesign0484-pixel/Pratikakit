@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0a0d13">
+<meta name="description" content="Des outils numériques simples pour gérer votre activité.">
+<title>À définir</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<script defer src="js/vendor/supabase.js"></script>
+<script type="module" src="js/pages/home.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Aller au contenu</a>
+<div id="site-header"></div>
+<main id="main">
+  <noscript><div class="container"><p class="alert alert-info">Ce site a besoin de JavaScript pour afficher le catalogue.</p></div></noscript>
+  <section class="hero">
+    <div class="container">
+      <h1 id="hero-title">Des outils numériques simples, pour gérer votre activité.</h1>
+      <p class="lead" id="hero-lead">Retrouvez au même endroit des applications prêtes à l'emploi pour les indépendants, les entrepreneurs et les petites entreprises.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="catalogue.html">Parcourir le catalogue</a>
+        <a class="btn btn-ghost" href="contact.html">Nous écrire</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="featured-title">
+    <div class="container">
+      <div class="section-head">
+        <div><h2 id="featured-title">Outils à découvrir</h2><p>Une sélection des outils disponibles dans le catalogue.</p></div>
+        <a class="btn btn-ghost" href="catalogue.html">Voir tout le catalogue</a>
+      </div>
+      <div id="featured"></div>
+    </div>
+  </section>
+
+  <section class="section" id="categories-section" aria-labelledby="cats-title" hidden>
+    <div class="container">
+      <div class="section-head"><div><h2 id="cats-title">Parcourir par catégorie</h2></div></div>
+      <ul class="cat-list" id="categories"></ul>
+    </div>
+  </section>
+
+  <section class="section" id="steps-section" aria-labelledby="how-title">
+    <div class="container">
+      <div class="section-head"><div><h2 id="how-title">Comment ça marche</h2></div></div>
+      <ol class="steps">
+        <li><h3>Choisissez un outil</h3><p>Parcourez le catalogue par catégorie et lisez la fiche : problèmes résolus, fonctionnalités, prix.</p></li>
+        <li><h3>Commandez</h3><p>Créez votre compte, passez commande et réglez par Mobile Money. L'accès est activé dès que le paiement est vérifié.</p></li>
+        <li><h3>Utilisez-le depuis votre espace</h3><p>Vos outils sont réunis au même endroit et s'ouvrent en un clic.</p></li>
+      </ol>
+    </div>
+  </section>
+</main>
+<div id="site-footer"></div>
+</body>
+</html>
